@@ -1,0 +1,77 @@
+name: update
+
+# Every 12 hours: mirror the upstream release into source.json, verify it builds
+# and is authentic, then commit the bump straight to main.
+on:
+  schedule:
+    - cron: "23 */12 * * *" # 00:23 and 12:23 UTC
+  workflow_dispatch: {}
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: DeterminateSystems/nix-installer-action@v22
+
+      - name: Sync source.json with upstream
+        id: sync
+        run: |
+          ./scripts/update.sh | tee /tmp/update.log
+          if tail -1 /tmp/update.log | grep -qx changed; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build and verify authenticity
+        if: steps.sync.outputs.changed == 'true'
+        env:
+          CUA_DRIVER_RS_TELEMETRY_ENABLED: "false"
+          CUA_DRIVER_RS_UPDATE_CHECK: "false"
+        run: |
+          nix build --print-build-logs .#cua-driver
+          ./scripts/verify-signature.sh result
+          ./result/bin/cua-driver --version
+
+      - name: Commit bump to main
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          version="$(jq -r .version pkgs/cua-driver/source.json)"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pkgs/cua-driver/source.json
+          git commit -m "chore: bump cua-driver to ${version}"
+          for attempt in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "push rejected (attempt ${attempt}); rebasing onto origin/main…"
+            git pull --rebase --autostash origin main
+          done
+          echo "ERROR: could not push bump after 3 attempts" >&2
+          exit 1
+
+      # GitHub disables cron schedules in public repos after 60 days with no
+      # repo activity. A quiet upstream produces no bump commits, which would
+      # silently switch off this updater right before the release it exists to
+      # catch. A bot push resets that clock.
+      - name: Keep-alive (prevent 60-day schedule disable)
+        if: steps.sync.outputs.changed == 'false'
+        run: |
+          age=$(( ( $(date +%s) - $(git log -1 --format=%ct) ) / 86400 ))
+          if [ "$age" -lt 45 ]; then
+            echo "last commit ${age}d old — no keep-alive needed"
+            exit 0
+          fi
+          version="$(jq -r .version pkgs/cua-driver/source.json)"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: keep-alive — upstream still at ${version}"
+          git push

@@ -1,0 +1,25 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v5
+      - uses: DeterminateSystems/nix-installer-action@v22
+      - name: flake check
+        run: nix flake check --print-build-logs
+      - name: build package
+        run: nix build --print-build-logs .#cua-driver
+      - name: verify authenticity
+        run: ./scripts/verify-signature.sh result
+      - name: smoke test CLI
+        env:
+          CUA_DRIVER_RS_TELEMETRY_ENABLED: "false"
+          CUA_DRIVER_RS_UPDATE_CHECK: "false"
+        run: ./result/bin/cua-driver --version
