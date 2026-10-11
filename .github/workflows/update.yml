@@ -38,7 +38,7 @@ jobs:
           CUA_DRIVER_RS_TELEMETRY_ENABLED: "false"
           CUA_DRIVER_RS_UPDATE_CHECK: "false"
         run: |
-          nix build --print-build-logs .#cua-driver
+          nix build --print-build-logs .#cua-driver .#cua-driver-skills
           ./scripts/verify-signature.sh result
           ./result/bin/cua-driver --version
 

@@ -2,6 +2,7 @@
   lib,
   stdenvNoCC,
   fetchurl,
+  callPackage,
 }:
 
 # Cua Driver — repackaged from the signed, notarized darwin-universal release
@@ -62,6 +63,8 @@ stdenvNoCC.mkDerivation {
     appName = "CuaDriver.app";
     bundleIdentifier = "com.trycua.driver";
     teamIdentifier = "YCK386LBJ7";
+    # Skill pack from the same release; see skills.nix.
+    skills = callPackage ./skills.nix { };
   };
 
   meta = {

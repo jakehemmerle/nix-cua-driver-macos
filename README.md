@@ -14,6 +14,10 @@ macOS ties Accessibility and Screen Recording grants to the signed app at a stab
 - opts out of upstream's default-on telemetry, both through the environment and persistently, unless `telemetry = true`;
 - optionally runs `cua-driver serve` as a LaunchAgent (`daemon.enable`).
 
+## Agent skill
+
+Each upstream release also ships an agent skill pack (`SKILL.md` and its platform and workflow guides). `packages.<system>.cua-driver-skills`, also reachable as `config.programs.cua-driver.package.skills`, installs it unmodified at `share/cua-driver/skills/cua-driver`. It is pinned in `source.json` next to the app, so the skill always matches the installed driver. Link that directory into your agents' skill directories, for example `~/.agents/skills/cua-driver`. This replaces `cua-driver skills install`, which downloads into `~/.cua-driver` outside Nix.
+
 ## Use it with Home Manager
 
 ```nix
@@ -65,7 +69,7 @@ Running the CLI straight from the store works for read-only commands. For deskto
 
 ## Auto-update
 
-Every 12 hours, `.github/workflows/update.yml` reads Homebrew's `cuadriver` cask through its JSON API. It requires the URL to be trycua/cua's own `darwin-universal` release asset and writes `pkgs/cua-driver/source.json`. It then builds the package, verifies the notarization and Team ID, smoke-tests the CLI, and commits the bump to `main`. To update by hand:
+Every 12 hours, `.github/workflows/update.yml` reads Homebrew's `cuadriver` cask through its JSON API. It requires the URL to be trycua/cua's own `darwin-universal` release asset and writes `pkgs/cua-driver/source.json`. It takes the skill pack's digest from the same release's `SHA256SUMS`. It then builds both packages, verifies the notarization and Team ID, smoke-tests the CLI, and commits the bump to `main`. To update by hand:
 
 ```sh
 ./scripts/update.sh && nix build .#cua-driver && ./scripts/verify-signature.sh result

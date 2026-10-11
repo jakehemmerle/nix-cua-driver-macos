@@ -29,6 +29,7 @@
         in
         {
           inherit cua-driver;
+          cua-driver-skills = cua-driver.skills;
           default = cua-driver;
         }
       );
@@ -54,6 +55,7 @@
 
       checks = forSystems (system: {
         build = self.packages.${system}.cua-driver;
+        skills = self.packages.${system}.cua-driver-skills;
       });
 
       formatter = forSystems (system: (pkgsFor system).nixfmt);

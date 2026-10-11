@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# Regenerate pkgs/cua-driver/source.json from the Homebrew `cuadriver` cask.
+# Regenerate pkgs/cua-driver/source.json from the Homebrew `cuadriver` cask,
+# plus the matching agent skill pack from the same upstream release.
 # Homebrew's JSON API carries the cask's resolved {version, url, sha256}, kept
 # current by Homebrew's autobump; the URL must still point at trycua/cua's own
 # GitHub release. Prints a final line of `changed` or `unchanged` for CI.
@@ -43,8 +44,23 @@ fi
 # Homebrew publishes hex; Nix wants SRI.
 sri="$(nix hash convert --hash-algo sha256 --to sri "$sha_hex")"
 
+# The agent skill pack ships in the same upstream release. Take its digest from
+# the release's SHA256SUMS so the skill always matches the packaged driver.
+release="${URL_PREFIX}${version}"
+skills_name="cua-driver-rs-v${version}-skills.tar.gz"
+skills_url="${release}/${skills_name}"
+skills_hex="$(curl -fsSL --retry 3 --retry-delay 2 "${release}/SHA256SUMS" \
+  | awk -v name="$skills_name" '$2 == name || $2 == "*" name { print $1 }')"
+if ! printf '%s' "$skills_hex" | grep -qE '^[0-9a-f]{64}$'; then
+  echo "ERROR: no sha256 for $skills_name in the release SHA256SUMS" >&2
+  exit 1
+fi
+skills_sri="$(nix hash convert --hash-algo sha256 --to sri "$skills_hex")"
+
 new="$(jq -n --arg version "$version" --arg url "$url" --arg sha256 "$sri" \
-  '{version: $version, url: $url, sha256: $sha256}')"
+  --arg skills_url "$skills_url" --arg skills_sha256 "$skills_sri" \
+  '{version: $version, url: $url, sha256: $sha256,
+    skills: {url: $skills_url, sha256: $skills_sha256}}')"
 old="$(cat "$SRC_JSON" 2>/dev/null || echo '{}')"
 
 if [ "$(jq -S . <<<"$new")" = "$(jq -S . <<<"$old")" ]; then
