@@ -1,9 +1,9 @@
 {
-  "version": "0.36.0",
-  "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.36.0/cua-driver-rs-0.36.0-darwin-universal.tar.gz",
-  "sha256": "sha256-KoPPnDovp64n8/5i5CauylrPdlEbsU3WTRDMst5q7K4=",
+  "version": "0.37.0",
+  "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.37.0/cua-driver-rs-0.37.0-darwin-universal.tar.gz",
+  "sha256": "sha256-MThHs6vVNlj8yLtNH4nDVA7tfK/HYGhde1IroRJ4eLE=",
   "skills": {
-    "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.36.0/cua-driver-rs-v0.36.0-skills.tar.gz",
-    "sha256": "sha256-Uo5clcQ7/QPZ8Dm118+OqHgE1xrbuhOfrv8k6jFhzdY="
+    "url": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.37.0/cua-driver-rs-v0.37.0-skills.tar.gz",
+    "sha256": "sha256-pDjRiee5D/ToXGXU2lCv11TNMjFIq6Xdf0uss7ckcKQ="
   }
 }
